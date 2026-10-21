@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthenticatedClosingRouteImport } from './routes/_authenticated/closing'
 import { Route as AuthenticatedDrinksRouteImport } from './routes/_authenticated/drinks'
 import { Route as AuthenticatedInventoryRouteImport } from './routes/_authenticated/inventory'
 import { Route as AuthenticatedKitchenRouteImport } from './routes/_authenticated/kitchen'
+import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/sales'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,6 +25,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedClosingRoute = AuthenticatedClosingRouteImport.update({
+  id: '/closing',
+  path: '/closing',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDrinksRoute = AuthenticatedDrinksRouteImport.update({
   id: '/drinks',
@@ -39,39 +46,52 @@ const AuthenticatedKitchenRoute = AuthenticatedKitchenRouteImport.update({
   path: '/kitchen',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSalesRoute = AuthenticatedSalesRouteImport.update({
+  id: '/sales',
+  path: '/sales',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/closing': typeof AuthenticatedClosingRoute
   '/drinks': typeof AuthenticatedDrinksRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/kitchen': typeof AuthenticatedKitchenRoute
+  '/sales': typeof AuthenticatedSalesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/closing': typeof AuthenticatedClosingRoute
   '/drinks': typeof AuthenticatedDrinksRoute
   '/inventory': typeof AuthenticatedInventoryRoute
   '/kitchen': typeof AuthenticatedKitchenRoute
+  '/sales': typeof AuthenticatedSalesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/_authenticated/closing': typeof AuthenticatedClosingRoute
   '/_authenticated/drinks': typeof AuthenticatedDrinksRoute
   '/_authenticated/inventory': typeof AuthenticatedInventoryRoute
   '/_authenticated/kitchen': typeof AuthenticatedKitchenRoute
+  '/_authenticated/sales': typeof AuthenticatedSalesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/drinks' | '/inventory' | '/kitchen'
+  fullPaths: '/' | '/closing' | '/drinks' | '/inventory' | '/kitchen' | '/sales'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/drinks' | '/inventory' | '/kitchen'
+  to: '/' | '/closing' | '/drinks' | '/inventory' | '/kitchen' | '/sales'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/_authenticated/closing'
     | '/_authenticated/drinks'
     | '/_authenticated/inventory'
     | '/_authenticated/kitchen'
+    | '/_authenticated/sales'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -95,6 +115,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/closing': {
+      id: '/_authenticated/closing'
+      path: '/closing'
+      fullPath: '/closing'
+      preLoaderRoute: typeof AuthenticatedClosingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/drinks': {
       id: '/_authenticated/drinks'
       path: '/drinks'
@@ -116,19 +143,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKitchenRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sales': {
+      id: '/_authenticated/sales'
+      path: '/sales'
+      fullPath: '/sales'
+      preLoaderRoute: typeof AuthenticatedSalesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedClosingRoute: typeof AuthenticatedClosingRoute
   AuthenticatedDrinksRoute: typeof AuthenticatedDrinksRoute
   AuthenticatedInventoryRoute: typeof AuthenticatedInventoryRoute
   AuthenticatedKitchenRoute: typeof AuthenticatedKitchenRoute
+  AuthenticatedSalesRoute: typeof AuthenticatedSalesRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedClosingRoute: AuthenticatedClosingRoute,
   AuthenticatedDrinksRoute: AuthenticatedDrinksRoute,
   AuthenticatedInventoryRoute: AuthenticatedInventoryRoute,
   AuthenticatedKitchenRoute: AuthenticatedKitchenRoute,
+  AuthenticatedSalesRoute: AuthenticatedSalesRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
