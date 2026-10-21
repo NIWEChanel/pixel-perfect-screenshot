@@ -25,7 +25,7 @@ function ExpensesPage() {
   const { data: settings } = useSettings();
   const { data: names = {} } = useProfilesMap();
   const cur = settings?.currency ?? "RWF";
-  const [f, setF] = useState({ business_date: kigaliToday(), category: CATEGORIES[0], description: "", amount: "", payment_method: "cash" });
+  const [f, setF] = useState({ business_date: kigaliToday(), category: CATEGORIES[0] as string, description: "", amount: "", payment_method: "cash" });
 
   const list = useQuery({
     queryKey: ["expenses"],

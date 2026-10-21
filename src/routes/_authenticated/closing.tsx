@@ -200,7 +200,7 @@ function ClosingPage() {
             <tbody>
               {rows.map((r, i) => {
                 const variance = r.physical == null ? null : r.physical - r.expected;
-                const header = i === 0 || rows[i - 1].category !== r.category;
+                const header = i === 0 || rows[i - 1]?.category !== r.category;
                 return [
                   header && (
                     <tr key={r.category} className="bg-primary/10"><td colSpan={9} className={tdCls + " font-semibold text-primary"}>{t(r.category)}</td></tr>
