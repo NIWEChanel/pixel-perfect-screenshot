@@ -157,7 +157,7 @@ function AppShell() {
 
 export function PasswordChangeForm({ onDone }: { onDone?: () => void }) {
   const { t } = useI18n();
-  const { refresh, session } = useAuth();
+  const { refresh } = useAuth();
   const [cur, setCur] = useState("");
   const [p1, setP1] = useState("");
   const [p2, setP2] = useState("");
@@ -170,17 +170,11 @@ export function PasswordChangeForm({ onDone }: { onDone?: () => void }) {
     if (!strongPassword(p1)) return setErr(t("pwRules"));
     if (p1 !== p2) return setErr(t("pwMismatch"));
     setBusy(true);
-    // Verify current password first
-    const email = session?.user.email ?? "";
-    const check = await supabase.auth.signInWithPassword({ email, password: cur });
-    if (check.error) {
-      setBusy(false);
-      return setErr(t("invalidCreds"));
-    }
-    const { error } = await supabase.auth.updateUser({ password: p1 });
+    // The backend itself requires the current password when a new one is set.
+    const { error } = await supabase.auth.updateUser({ password: p1, current_password: cur });
     if (error) {
       setBusy(false);
-      return setErr(error.message);
+      return setErr(/current password/i.test(error.message) ? t("invalidCreds") : error.message);
     }
     await supabase.rpc("mark_password_changed");
     setBusy(false);

@@ -193,6 +193,21 @@ const D: Dict = {
   user: ["Ukoresha", "User", "Utilisateur"],
   details: ["Ibisobanuro birambuye", "Details", "Détails"],
   noPermission: ["Nta burenganzira ufite", "You don't have permission", "Vous n'avez pas la permission"],
+  // reports, employees, audit, settings, profile
+  cashRecon: ["Guhuza amafaranga", "Cash reconciliation", "Rapprochement de caisse"],
+  entries: ["Injira", "Entries", "Entrées"],
+  revenue: ["Amafaranga yinjiye", "Revenue", "Chiffre d'affaires"],
+  prev: ["Ibanze", "Previous", "Précédent"],
+  next: ["Igikurikira", "Next", "Suivant"],
+  unpaid: ["Bidahembewe", "Unpaid", "Impayés"],
+  paid: ["Byahembewe", "Paid", "Payés"],
+  generate: ["Kora", "Generate", "Générer"],
+  loadMore: ["Ibandi", "Load more", "Charger plus"],
+  time: ["Igihe", "Time", "Heure"],
+  action: ["Igikorwa", "Action", "Action"],
+  entity: ["Ikintu", "Record", "Enregistrement"],
+  deadline: ["Igihe cyo gufunga raporo", "Report deadline", "Heure limite de rapport"],
+  permissions: ["Uburenganzira", "Permissions", "Autorisations"],
 };
 
 const idx: Record<Lang, number> = { rw: 0, en: 1, fr: 2 };

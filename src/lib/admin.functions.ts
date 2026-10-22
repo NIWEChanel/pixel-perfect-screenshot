@@ -63,7 +63,7 @@ type NewEmployee = {
 
 export const createEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: NewEmployee) => {
+  .validator((d: NewEmployee) => {
     const username = String(d.username ?? "").trim().toLowerCase();
     if (!USERNAME_RE.test(username)) throw new Error("Username must be 3-32 chars: letters, numbers, . _ -");
     if (!strong(String(d.password ?? ""))) throw new Error("Weak password");
@@ -106,7 +106,7 @@ export const createEmployee = createServerFn({ method: "POST" })
 
 export const resetEmployeePassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { userId: string; password: string }) => {
+  .validator((d: { userId: string; password: string }) => {
     if (!strong(String(d.password ?? ""))) throw new Error("Weak password");
     return d;
   })
@@ -124,7 +124,7 @@ export const resetEmployeePassword = createServerFn({ method: "POST" })
 
 export const setEmployeeActive = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { userId: string; active: boolean }) => d)
+  .validator((d: { userId: string; active: boolean }) => d)
   .handler(async ({ data, context }) => {
     await assertAdmin(context.supabase, context.userId);
     if (data.userId === context.userId) throw new Error("You cannot deactivate yourself");
