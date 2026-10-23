@@ -258,6 +258,7 @@ export type Database = {
           can_receive_stock: boolean
           can_record_expenses: boolean
           created_at: string
+          department: string
           full_name: string
           id: string
           language: string | null
@@ -270,6 +271,7 @@ export type Database = {
           can_receive_stock?: boolean
           can_record_expenses?: boolean
           created_at?: string
+          department?: string
           full_name?: string
           id: string
           language?: string | null
@@ -282,6 +284,7 @@ export type Database = {
           can_receive_stock?: boolean
           can_record_expenses?: boolean
           created_at?: string
+          department?: string
           full_name?: string
           id?: string
           language?: string | null
