@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS department text NOT NULL DEFAULT 'both' CHECK (department IN ('drinks','kitchen','both'));
