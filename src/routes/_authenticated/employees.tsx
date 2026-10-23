@@ -119,7 +119,12 @@ function EmployeesPage() {
                   )}
                 </td>
                 <td className={tdCls}>@{e.username}</td>
-                <td className={tdCls}>{e.role === "super_admin" ? t("superAdmin") : t("salesManager")}</td>
+                <td className={tdCls}>
+                  {e.role === "super_admin" ? t("superAdmin") : t("salesManager")}
+                  <div className="text-xs text-muted-foreground">
+                    {e.department === "both" ? `${t("drinks")} + ${t("kitchen")}` : t(e.department as "drinks" | "kitchen")}
+                  </div>
+                </td>
                 <td className={tdCls}>
                   <StatusBadge status={e.active ? "active" : "inactive"} label={e.active ? t("active") : t("inactive")} />
                 </td>
@@ -190,6 +195,7 @@ function NewEmployeeForm({ onDone }: { onDone: () => void }) {
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState(genPassword);
+  const [dept, setDept] = useState<"drinks" | "kitchen" | "both">("both");
   const [recv, setRecv] = useState(true);
   const [exp, setExp] = useState(true);
   const [exportPerm, setExportPerm] = useState(true);
@@ -206,6 +212,7 @@ function NewEmployeeForm({ onDone }: { onDone: () => void }) {
           username,
           full_name: fullName,
           password,
+          department: dept,
           can_receive_stock: recv,
           can_record_expenses: exp,
           can_export: exportPerm,
@@ -233,6 +240,15 @@ function NewEmployeeForm({ onDone }: { onDone: () => void }) {
           <Button type="button" size="icon" variant="outline" aria-label={t("generate")} onClick={() => setPassword(genPassword())}>
             <Wand2 />
           </Button>
+        </div>
+      </Field>
+      <Field label={t("drinks") + " / " + t("kitchen")}>
+        <div className="grid grid-cols-3 gap-2">
+          {(["drinks", "kitchen", "both"] as const).map((d) => (
+            <Button key={d} type="button" variant={dept === d ? "hero" : "outline"} onClick={() => setDept(d)}>
+              {d === "both" ? `${t("drinks")} + ${t("kitchen")}` : t(d)}
+            </Button>
+          ))}
         </div>
       </Field>
       <div className="space-y-2 text-sm">

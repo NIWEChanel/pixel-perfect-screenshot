@@ -56,6 +56,7 @@ type NewEmployee = {
   username: string;
   full_name: string;
   password: string;
+  department: "drinks" | "kitchen" | "both";
   can_receive_stock: boolean;
   can_record_expenses: boolean;
   can_export: boolean;
@@ -69,6 +70,7 @@ export const createEmployee = createServerFn({ method: "POST" })
     if (!strong(String(d.password ?? ""))) throw new Error("Weak password");
     const full_name = String(d.full_name ?? "").trim().slice(0, 120);
     if (!full_name) throw new Error("Full name required");
+    if (!["drinks", "kitchen", "both"].includes(d.department)) throw new Error("Choose drinks, kitchen or both");
     return { ...d, username, full_name, can_receive_stock: !!d.can_receive_stock, can_record_expenses: !!d.can_record_expenses, can_export: !!d.can_export };
   })
   .handler(async ({ data, context }) => {
@@ -88,6 +90,7 @@ export const createEmployee = createServerFn({ method: "POST" })
       id,
       username: data.username,
       full_name: data.full_name,
+      department: data.department,
       must_change_password: true,
       can_receive_stock: data.can_receive_stock,
       can_record_expenses: data.can_record_expenses,
