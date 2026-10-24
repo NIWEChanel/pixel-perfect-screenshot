@@ -13,7 +13,7 @@ describe("Sales and inventory validation", () => {
     expect(validateSale([{ product_id: "drink", quantity: "5" }], products)).toBeNull();
   });
   it("accepts a configured zero selling price", () => {
-    expect(validateSale([{ product_id: "drink", quantity: "1" }], [{ ...products[0], selling_price: 0 }])).toBeNull();
+    expect(validateSale([{ product_id: "drink", quantity: "1" }], [{ id: "drink", current_stock: 5, archived: false, selling_price: 0 }])).toBeNull();
   });
   it("rejects quantities smaller than stock precision", () => {
     expect(validateSale([{ product_id: "drink", quantity: "0.0001" }], products)).toBe("invalidQuantity");
