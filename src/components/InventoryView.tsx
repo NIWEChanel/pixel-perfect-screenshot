@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { useProducts, useSettings, errMsg } from "@/lib/data";
 import { fmtMoney, fmtNum } from "@/lib/format";
+import { validateAdjustment } from "@/lib/stock-validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,7 +21,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
   const { isAdmin } = useAuth();
   const { data: settings } = useSettings();
   const cur = settings?.currency ?? "RWF";
-  const { data: products = [], isLoading } = useProducts(isAdmin);
+  const { data: products = [], isLoading, error } = useProducts(isAdmin);
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<string>(category ?? "all");
   const [edit, setEdit] = useState<Partial<Product> | null>(null);
@@ -30,7 +31,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
   const list = products.filter(
     (p) => (cat === "all" || p.category === cat) && p.name.toLowerCase().includes(q.toLowerCase()),
   );
-  const value = list.reduce((s, p) => s + Number(p.current_stock) * Number(p.avg_cost), 0);
+  const value = list.filter((p) => !p.archived).reduce((s, p) => s + Number(p.current_stock) * Number(p.avg_cost), 0);
   const low = list.filter((p) => !p.archived && Number(p.current_stock) > 0 && Number(p.current_stock) <= Number(p.min_stock)).length;
   const out = list.filter((p) => !p.archived && Number(p.current_stock) <= 0).length;
 
@@ -46,6 +47,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
           </Button>
         )}
       />
+      {error && <p role="alert" className="mb-3 text-destructive">{t("loadError")}: {errMsg(error)}</p>}
       <div className="mb-4 grid grid-cols-2 gap-3 md:grid-cols-4">
         <Stat label={t("product")} value={list.length} />
         <Stat label={t("stockValue")} value={fmtMoney(value, cur)} />
@@ -72,7 +74,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
                 <th className={thCls}>{t("unit")}</th>
                 <th className={thCls + " text-right"}>{t("stock")}</th>
                 <th className={thCls + " text-right"}>{t("minStock")}</th>
-                <th className={thCls + " text-right"}>{t("costPrice")}</th>
+                <th className={thCls + " text-right"}>{t("avgCost")}</th>
                 <th className={thCls + " text-right"}>{t("sellingPrice")}</th>
                 <th className={thCls + " text-right"}>{t("stockValue")}</th>
                 <th className={thCls}>{t("status")}</th>
@@ -81,6 +83,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
             </thead>
             <tbody>
               {isLoading && <tr><td className={tdCls} colSpan={10}>{t("loading")}</td></tr>}
+              {!isLoading && !error && list.length === 0 && <tr><td className={tdCls} colSpan={10}>{t("noData")}</td></tr>}
               {list.map((p) => {
                 const s = Number(p.current_stock);
                 const st = p.archived ? "inactive" : s <= 0 ? "rejected" : s <= Number(p.min_stock) ? "pending" : "approved";
@@ -92,7 +95,7 @@ export function InventoryView({ category }: { category?: "drinks" | "kitchen" })
                     <td className={tdCls}>{p.unit}</td>
                     <td className={tdCls + " text-right font-semibold"}>{fmtNum(s)}</td>
                     <td className={tdCls + " text-right"}>{fmtNum(Number(p.min_stock))}</td>
-                    <td className={tdCls + " text-right"}>{p.cost_price == null ? <span className="text-muted-foreground">{t("notSet")}</span> : fmtMoney(Number(p.avg_cost) || Number(p.cost_price), cur)}</td>
+                    <td className={tdCls + " text-right"}>{fmtMoney(Number(p.avg_cost), cur)}</td>
                     <td className={tdCls + " text-right"}>{p.selling_price == null ? <span className="text-warning">{t("notSet")}</span> : fmtMoney(Number(p.selling_price), cur)}</td>
                     <td className={tdCls + " text-right"}>{fmtMoney(s * Number(p.avg_cost), cur)}</td>
                     <td className={tdCls}><StatusBadge status={st} label={stLabel} /></td>
@@ -125,7 +128,9 @@ function ProductDialog({ product, onClose }: { product: Partial<Product>; onClos
   const num = (v: string) => (v === "" ? null : Number(v));
 
   async function save() {
+    if (busy) return;
     if (!f.name?.trim()) return toast.error(t("required"));
+    if ([f.min_stock, f.cost_price, f.selling_price].some((value) => value != null && (!Number.isFinite(Number(value)) || Number(value) < 0))) return toast.error(t("invalidCost"));
     setBusy(true);
     const payload = {
       name: f.name.trim().toUpperCase(),
@@ -137,14 +142,19 @@ function ProductDialog({ product, onClose }: { product: Partial<Product>; onClos
       selling_price: f.selling_price ?? null,
       archived: !!f.archived,
     };
-    const res = f.id
-      ? await supabase.from("products").update(payload).eq("id", f.id)
-      : await supabase.from("products").insert(payload);
-    setBusy(false);
-    if (res.error) return toast.error(errMsg(res.error));
-    toast.success(t("saved"));
-    qc.invalidateQueries({ queryKey: ["products"] });
-    onClose();
+    try {
+      const res = f.id
+        ? await supabase.from("products").update(payload).eq("id", f.id).select("id").single()
+        : await supabase.from("products").insert(payload).select("id").single();
+      if (res.error) throw res.error;
+      toast.success(t("saved"));
+      await qc.invalidateQueries();
+      onClose();
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -189,18 +199,25 @@ function AdjustDialog({ product, onClose }: { product: Product; onClose: () => v
   const [busy, setBusy] = useState(false);
 
   async function save() {
+    if (busy) return;
     const n = Number(qty);
-    if (!qty || !n) return toast.error(t("quantity"));
+    const validation = validateAdjustment(type, n, Number(cost));
+    if (validation) return toast.error(t(validation));
     if (!reason.trim()) return toast.error(t("reason"));
     setBusy(true);
-    const { error } = await supabase.rpc("adjust_stock", {
-      _product: product.id, _type: type, _qty: n, _cost: cost === "" ? 0 : Number(cost), _reason: reason,
-    });
-    setBusy(false);
-    if (error) return toast.error(errMsg(error));
-    toast.success(t("saved"));
-    qc.invalidateQueries({ queryKey: ["products"] });
-    onClose();
+    try {
+      const { error } = await supabase.rpc("adjust_stock", {
+        _product: product.id, _type: type, _qty: n, _cost: Number(cost), _reason: reason.trim(),
+      });
+      if (error) throw error;
+      toast.success(t("saved"));
+      await qc.invalidateQueries();
+      onClose();
+    } catch (error) {
+      toast.error(errMsg(error));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -217,7 +234,7 @@ function AdjustDialog({ product, onClose }: { product: Product; onClose: () => v
             </select>
           </Field>
           <Field label={t("quantity")} hint={type === "adjustment" ? "Use a negative number to remove stock" : undefined}>
-            <Input type="number" value={qty} onChange={(e) => setQty(e.target.value)} />
+            <Input type="number" step={0.001} value={qty} onChange={(e) => setQty(e.target.value)} />
           </Field>
           {type === "opening" && <Field label={t("unitCost")}><Input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)} /></Field>}
           <Field label={t("reason")}><Input value={reason} onChange={(e) => setReason(e.target.value)} /></Field>
@@ -233,10 +250,11 @@ function AdjustDialog({ product, onClose }: { product: Product; onClose: () => v
 
 function HistoryDialog({ product, onClose }: { product: Product; onClose: () => void }) {
   const { t } = useI18n();
-  const { data = [] } = useQuery({
+  const { data = [], error, isPending } = useQuery({
     queryKey: ["movements", product.id],
     queryFn: async () => {
-      const { data } = await supabase.from("stock_movements").select("*").eq("product_id", product.id).order("created_at", { ascending: false }).limit(200);
+      const { data, error } = await supabase.from("stock_movements").select("*").eq("product_id", product.id).order("created_at", { ascending: false }).limit(200);
+      if (error) throw error;
       return data ?? [];
     },
   });
@@ -251,7 +269,9 @@ function HistoryDialog({ product, onClose }: { product: Product; onClose: () => 
               <th className={thCls + " text-right"}>{t("quantity")}</th><th className={thCls}>{t("reason")}</th>
             </tr></thead>
             <tbody>
-              {data.length === 0 && <tr><td colSpan={4} className={tdCls + " text-muted-foreground"}>{t("noData")}</td></tr>}
+              {isPending && <tr><td colSpan={4} className={tdCls}>{t("loading")}</td></tr>}
+              {error && <tr><td colSpan={4} className={tdCls + " text-destructive"} role="alert">{t("loadError")}: {errMsg(error)}</td></tr>}
+              {!isPending && !error && data.length === 0 && <tr><td colSpan={4} className={tdCls + " text-muted-foreground"}>{t("noData")}</td></tr>}
               {data.map((m) => (
                 <tr key={m.id} className="border-t border-border">
                   <td className={tdCls}>{new Date(m.created_at).toLocaleString()}</td>
